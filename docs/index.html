@@ -193,11 +193,29 @@
 
             try {
                 const res = await fetch(apiUrl('/api/upload'), { method: 'POST', body: formData });
+
+                // 检查响应类型，避免解析 HTML 为 JSON 报错
+                const contentType = res.headers.get('content-type') || '';
+                if (!contentType.includes('application/json')) {
+                    if (IS_GITHUB_PAGES && !API_BASE) {
+                        throw new Error('未设置后端地址。请点击下方"切换"按钮，输入运行后端程序的电脑IP:8000');
+                    }
+                    throw new Error('后端服务不可用，请检查后端程序是否已启动');
+                }
+
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.detail || '上传失败');
                 showResult(data);
             } catch (err) {
-                showStatus(err.message, 'error');
+                let msg = err.message;
+                if (msg.includes('Failed to fetch') || msg.includes('string did not match')) {
+                    if (IS_GITHUB_PAGES) {
+                        msg = '无法连接后端服务。请点击下方"切换"按钮，输入运行后端程序的电脑IP:8000\n\n注意: 如果页面是HTTPS，部分手机浏览器可能阻止访问HTTP后端。建议直接访问 http://电脑IP:8000/';
+                    } else {
+                        msg = '无法连接后端服务，请检查后端程序是否已启动';
+                    }
+                }
+                showStatus(msg, 'error');
                 btn.disabled = false;
                 btn.textContent = '上传并生成二维码';
             }
