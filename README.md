@@ -7,7 +7,7 @@
 ### 方式一：Docker 一键部署（推荐）
 
 ```bash
-git clone https://github.com/你的用户名/qr-print-system.git
+git clone https://github.com/qipengxuan/qr-print-system.git
 cd qr-print-system
 
 # 修改打印机 IP（如果不同）
@@ -20,7 +20,7 @@ docker-compose up -d
 ### 方式二：本地运行
 
 ```bash
-git clone https://github.com/你的用户名/qr-print-system.git
+git clone https://github.com/qipengxuan/qr-print-system.git
 cd qr-print-system/backend
 pip install -r requirements.txt
 python main.py
@@ -28,16 +28,15 @@ python main.py
 
 ### 方式三：前端部署到 GitHub Pages + 后端本地运行
 
-1. Fork 本仓库到你的 GitHub 账号
-2. 进入仓库 Settings > Pages，Source 选择 `main` 分支，目录选 `/frontend`
-3. 等待部署完成，获得 GitHub Pages 地址（如 `https://你的用户名.github.io/qr-print-system/`）
-4. 在打印机同网络的电脑上运行后端：
+1. 进入仓库 Settings > Pages，Source 选择 `main` 分支，目录选 `/docs`
+2. 等待部署完成，获得 GitHub Pages 地址（如 `https://qipengxuan.github.io/qr-print-system/`）
+3. 在打印机同网络的电脑上运行后端：
    ```bash
-   git clone https://github.com/你的用户名/qr-print-system.git
+   git clone https://github.com/qipengxuan/qr-print-system.git
    cd qr-print-system
    docker-compose up -d
    ```
-5. 手机访问 GitHub Pages 地址，首次打开时设置后端地址为 `http://你的电脑IP:8000`
+4. 手机访问 GitHub Pages 地址，首次打开时设置后端地址为 `http://你的电脑IP:8000`
 
 ## 访问地址
 
@@ -74,7 +73,7 @@ python main.py
 
 ## 网络要求
 
-**后端服务必须运行在与打印机相同的局域网内**，因为打印机 IP `10.1.13.252` 是内网地址，云端无法直接访问。
+**后端服务必须运行在与打印机相同的局域网内**，因为打印机 IP 是内网地址，云端无法直接访问。
 
 手机访问上传页面时，需要与后端服务器网络可达（同一 WiFi 或局域网）。
 
@@ -82,7 +81,7 @@ python main.py
 
 ```
 qr-print-system/
-├── frontend/              # 前端（可部署到 GitHub Pages）
+├── docs/                 # 前端（可部署到 GitHub Pages）
 │   ├── index.html         # 手机上传页面
 │   ├── kiosk.html         # 扫码终端页面
 │   └── config.js          # API 地址配置

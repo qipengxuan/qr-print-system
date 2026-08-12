@@ -29,9 +29,10 @@ STORAGE_DIR.mkdir(exist_ok=True)
 JOB_EXPIRE_SECONDS = 1800  # 30 分钟过期
 
 # 前端目录：支持本地开发和 Docker 两种路径
+# 默认指向 docs/ 目录（兼容 GitHub Pages 部署）
 FRONTEND_DIR = Path(os.environ.get(
     "FRONTEND_DIR",
-    str(Path(__file__).parent.parent / "frontend")
+    str(Path(__file__).parent.parent / "docs")
 ))
 
 # ==================== 作业存储 ====================

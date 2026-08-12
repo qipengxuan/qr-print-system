@@ -17,12 +17,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ .
 
 # 复制前端文件
-COPY frontend/ /app/frontend
+COPY docs/ /app/docs
 
 # 创建存储目录
 RUN mkdir -p /app/storage
 
-ENV FRONTEND_DIR=/app/frontend
+ENV FRONTEND_DIR=/app/docs
 ENV STORAGE_DIR=/app/storage
 ENV PRINTER_IP=10.1.13.252
 ENV PRINTER_PORT=9100
