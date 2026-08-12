@@ -238,11 +238,13 @@ async def health():
 if __name__ == "__main__":
     import uvicorn
 
+    SERVER_PORT = int(os.environ.get("PORT", "8000"))
+
     print(f"\n{'=' * 50}")
     print(f"  扫码自助打印系统 v1.1")
     print(f"  打印机: {PRINTER_IP}:{PRINTER_PORT}")
-    print(f"  手机上传: http://<本机IP>:8000/")
-    print(f"  扫码终端: http://<本机IP>:8000/kiosk")
-    print(f"  健康检查: http://<本机IP>:8000/api/health")
+    print(f"  手机上传: http://<本机IP>:{SERVER_PORT}/")
+    print(f"  扫码终端: http://<本机IP>:{SERVER_PORT}/kiosk")
+    print(f"  健康检查: http://<本机IP>:{SERVER_PORT}/api/health")
     print(f"{'=' * 50}\n")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=SERVER_PORT)
