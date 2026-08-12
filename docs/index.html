@@ -6,96 +6,48 @@
     <title>自助打印 - 上传文件</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, "Segoe UI", "Noto Sans CJK SC", "WenQuanYi Micro Hei", sans-serif;
-            background: #f0f2f5; color: #1a1a2e; min-height: 100vh;
-        }
+        body { font-family: -apple-system, "Segoe UI", "Noto Sans CJK SC", "WenQuanYi Micro Hei", sans-serif; background: #f0f2f5; color: #1a1a2e; min-height: 100vh; }
         .container { max-width: 480px; margin: 0 auto; padding: 20px; }
         .header { text-align: center; padding: 30px 0 20px; }
         .header h1 { font-size: 24px; color: #1a1a2e; }
         .header p { font-size: 14px; color: #6b7280; margin-top: 8px; }
-
-        .upload-area {
-            background: #fff; border: 2px dashed #d1d5db; border-radius: 16px;
-            padding: 40px 20px; text-align: center; cursor: pointer;
-            transition: all 0.2s; margin: 20px 0;
-        }
-        .upload-area:active {
-            border-color: #635bff; background: #f5f3ff;
-        }
-        .upload-icon {
-            width: 56px; height: 56px; margin: 0 auto 12px;
-            border-radius: 50%; background: #f5f3ff;
-            display: flex; align-items: center; justify-content: center;
-        }
+        .upload-area { background: #fff; border: 2px dashed #d1d5db; border-radius: 16px; padding: 40px 20px; text-align: center; cursor: pointer; transition: all 0.2s; margin: 20px 0; }
+        .upload-area:active { border-color: #635bff; background: #f5f3ff; }
+        .upload-icon { width: 56px; height: 56px; margin: 0 auto 12px; border-radius: 50%; background: #f5f3ff; display: flex; align-items: center; justify-content: center; }
         .upload-icon svg { width: 28px; height: 28px; color: #635bff; }
         .upload-text { font-size: 16px; color: #1a1a2e; font-weight: 500; }
         .upload-hint { font-size: 13px; color: #9ca3af; margin-top: 8px; }
-
-        .btn {
-            display: block; width: 100%; padding: 14px; border: none; border-radius: 12px;
-            font-size: 16px; font-weight: 500; cursor: pointer; transition: all 0.2s;
-        }
+        .btn { display: block; width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
         .btn-primary { background: #635bff; color: #fff; }
         .btn-primary:active { background: #5a4ed6; }
         .btn-primary:disabled { background: #c4b8fd; cursor: not-allowed; }
         .btn-secondary { background: #f3f4f6; color: #374151; margin-top: 12px; }
-
         .result { display: none; background: #fff; border-radius: 16px; padding: 30px 20px; text-align: center; }
         .result.show { display: block; }
         .result h2 { font-size: 18px; margin-bottom: 20px; color: #059669; }
-        .qr-wrapper {
-            display: inline-block; padding: 16px; background: #fff;
-            border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
+        .qr-wrapper { display: inline-block; padding: 16px; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
         .qr-wrapper img { display: block; width: 200px; height: 200px; }
-        .token-display {
-            font-size: 32px; font-weight: 700; letter-spacing: 8px;
-            color: #635bff; margin: 20px 0; font-family: monospace;
-        }
+        .token-display { font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #635bff; margin: 20px 0; font-family: monospace; }
         .countdown { font-size: 14px; color: #6b7280; margin-bottom: 16px; }
-        .tips-result {
-            font-size: 13px; color: #6b7280; text-align: left;
-            background: #f9fafb; border-radius: 12px; padding: 16px; margin-top: 16px; line-height: 1.8;
-        }
-
-        .file-info {
-            display: none; background: #ecfdf5; border-radius: 10px;
-            padding: 12px 16px; margin: 12px 0; font-size: 14px; color: #059669;
-        }
+        .tips-result { font-size: 13px; color: #6b7280; text-align: left; background: #f9fafb; border-radius: 12px; padding: 16px; margin-top: 16px; line-height: 1.8; }
+        .file-info { display: none; background: #ecfdf5; border-radius: 10px; padding: 12px 16px; margin: 12px 0; font-size: 14px; color: #059669; }
         .file-info.show { display: block; }
-
-        .status-bar {
-            display: none; border-radius: 10px; padding: 12px 16px;
-            margin: 12px 0; font-size: 14px; text-align: center;
-        }
+        .status-bar { display: none; border-radius: 10px; padding: 12px 16px; margin: 12px 0; font-size: 14px; text-align: center; }
         .status-bar.uploading { display: block; background: #fef3c7; color: #92400e; }
         .status-bar.error { display: block; background: #fee2e2; color: #991b1b; }
-        .status-bar.success { display: block; background: #d1fae5; color: #065f46; }
-
-        .tips {
-            font-size: 13px; color: #6b7280; margin-top: 20px; line-height: 1.8;
-        }
-
-        .api-config {
-            margin-top: 24px; padding: 12px 16px; background: #f9fafb;
-            border-radius: 10px; font-size: 13px; color: #6b7280;
-            text-align: center;
-        }
-        .api-config a { color: #635bff; cursor: pointer; text-decoration: underline; }
+        .tips { font-size: 13px; color: #6b7280; margin-top: 20px; line-height: 1.8; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1>自助打印</h1>
-            <p>上传文件 → 获取二维码 → 打印机旁扫码取件</p>
+            <p>上传文件 - 获取二维码 - 打印机旁扫码取件</p>
         </div>
 
-        <!-- Upload Section -->
         <div id="uploadSection">
-            <!-- 用 label 包裹，移动端兼容性更好 -->
-            <label class="upload-area" id="uploadArea" for="fileInput">
+            <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg,.gif,.bmp,.tiff,.webp,.doc,.docx,.ppt,.pptx,.xls,.xlsx" style="display:none;">
+            <div class="upload-area" id="uploadArea">
                 <div class="upload-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
@@ -103,16 +55,13 @@
                 </div>
                 <div class="upload-text">点击选择文件</div>
                 <div class="upload-hint">支持 PDF、图片、Office 文档</div>
-            </label>
-            <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg,.gif,.bmp,.tiff,.webp,.doc,.docx,.ppt,.pptx,.xls,.xlsx" style="display:none;">
+            </div>
 
             <div class="file-info" id="fileInfo">
                 <span id="fileName"></span>
             </div>
 
-            <button class="btn btn-primary" id="uploadBtn" disabled onclick="uploadFile()">
-                上传并生成二维码
-            </button>
+            <button class="btn btn-primary" id="uploadBtn" disabled>上传并生成二维码</button>
 
             <div class="tips">
                 <strong>支持的格式：</strong><br>
@@ -120,16 +69,10 @@
                 Office 文档（Word / PPT / Excel）<br>
                 <strong>文件大小限制：50MB</strong>
             </div>
-
-            <div class="api-config" id="apiConfig">
-                后端服务: <span id="apiDisplay"></span> | <a onclick="resetApi()">切换</a>
-            </div>
         </div>
 
-        <!-- Status Bar -->
         <div class="status-bar" id="statusBar"></div>
 
-        <!-- Result Section -->
         <div class="result" id="resultSection">
             <h2>上传成功！请到打印机旁扫码取件</h2>
             <div class="qr-wrapper">
@@ -144,91 +87,76 @@
                 3. 等待打印完成<br><br>
                 <strong>取件码 30 分钟内有效，打印后自动销毁文件</strong>
             </div>
-            <button class="btn btn-secondary" onclick="location.reload()">
-                上传新文件
-            </button>
+            <button class="btn btn-secondary" onclick="location.reload()">上传新文件</button>
         </div>
     </div>
 
     <script>
-        // ===== 内联配置（避免外部 JS 加载问题） =====
-        var API_BASE = '';
-        var IS_GITHUB_PAGES = location.hostname.endsWith('github.io');
-
-        // 从 URL 参数读取
-        var params = new URLSearchParams(location.search);
-        var apiParam = params.get('api');
-        if (apiParam) {
-            API_BASE = apiParam.startsWith('http') ? apiParam : 'http://' + apiParam;
-            try { localStorage.setItem('print_api_base', API_BASE); } catch(e) {}
-        }
-
-        // 从 localStorage 读取
-        if (!API_BASE) {
-            try { API_BASE = localStorage.getItem('print_api_base') || ''; } catch(e) {}
-        }
-
-        function apiUrl(path) {
-            return API_BASE + path;
-        }
-
-        // 显示当前 API 地址
-        document.getElementById('apiDisplay').textContent = API_BASE || '同源 (' + location.host + ')';
-
-        // ===== 文件选择处理 =====
         var selectedFile = null;
+        var uploadArea = document.getElementById('uploadArea');
         var fileInput = document.getElementById('fileInput');
+        var uploadBtn = document.getElementById('uploadBtn');
 
-        // 用 onchange 代替 addEventListener，兼容性更好
-        fileInput.onchange = function(e) {
+        uploadArea.addEventListener('click', function() {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', function(e) {
             if (e.target.files && e.target.files.length > 0) {
                 selectedFile = e.target.files[0];
-                document.getElementById('fileName').textContent =
-                    selectedFile.name + ' (' + formatSize(selectedFile.size) + ')';
+                var sizeStr = formatSize(selectedFile.size);
+                document.getElementById('fileName').textContent = selectedFile.name + ' (' + sizeStr + ')';
                 document.getElementById('fileInfo').classList.add('show');
-                document.getElementById('uploadBtn').disabled = false;
+                uploadBtn.disabled = false;
             }
-        };
+        });
 
-        // ===== 上传函数 =====
-        function uploadFile() {
+        uploadBtn.addEventListener('click', function() {
             if (!selectedFile) {
                 alert('请先选择文件');
                 return;
             }
 
-            var btn = document.getElementById('uploadBtn');
-            btn.disabled = true;
-            btn.textContent = '上传中...';
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = '上传中...';
             showStatus('正在上传文件...', 'uploading');
 
             var formData = new FormData();
             formData.append('file', selectedFile);
 
-            fetch(apiUrl('/api/upload'), { method: 'POST', body: formData })
-                .then(function(res) {
-                    var contentType = res.headers.get('content-type') || '';
-                    if (!contentType.includes('application/json')) {
-                        throw new Error('后端服务不可用，请检查后端程序是否已启动');
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/upload', true);
+
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    try {
+                        var data = JSON.parse(xhr.responseText);
+                        showResult(data);
+                    } catch(e) {
+                        showStatus('解析响应失败: ' + e.message, 'error');
+                        uploadBtn.disabled = false;
+                        uploadBtn.textContent = '上传并生成二维码';
                     }
-                    return res.json().then(function(data) {
-                        if (!res.ok) throw new Error(data.detail || '上传失败');
-                        return data;
-                    });
-                })
-                .then(function(data) {
-                    showResult(data);
-                })
-                .catch(function(err) {
-                    var msg = err.message;
-                    if (msg.indexOf('Failed to fetch') >= 0 || msg.indexOf('NetworkError') >= 0) {
-                        msg = '无法连接后端服务，请确保手机和电脑在同一网络，且后端程序正在运行';
+                } else {
+                    try {
+                        var errData = JSON.parse(xhr.responseText);
+                        showStatus(errData.detail || '上传失败 (' + xhr.status + ')', 'error');
+                    } catch(e) {
+                        showStatus('上传失败 (' + xhr.status + ')', 'error');
                     }
-                    showStatus(msg, 'error');
-                    btn.disabled = false;
-                    btn.textContent = '上传并生成二维码';
-                });
-        }
+                    uploadBtn.disabled = false;
+                    uploadBtn.textContent = '上传并生成二维码';
+                }
+            };
+
+            xhr.onerror = function() {
+                showStatus('网络错误，无法连接服务器', 'error');
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = '上传并生成二维码';
+            };
+
+            xhr.send(formData);
+        });
 
         function showResult(data) {
             document.getElementById('statusBar').style.display = 'none';
@@ -245,8 +173,7 @@
                 }
                 var min = Math.floor(remaining / 60);
                 var sec = remaining % 60;
-                document.getElementById('countdown').textContent =
-                    '剩余有效时间: ' + min + '分' + sec + '秒';
+                document.getElementById('countdown').textContent = '剩余有效时间: ' + min + '分' + sec + '秒';
                 remaining--;
             };
             updateCountdown();
@@ -263,18 +190,6 @@
             if (bytes < 1024) return bytes + ' B';
             if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
             return (bytes / 1048576).toFixed(1) + ' MB';
-        }
-
-        function resetApi() {
-            try { localStorage.removeItem('print_api_base'); } catch(e) {}
-            var addr = prompt('请输入后端服务器地址（留空则使用同源）:\n例如: 192.168.1.100:9000');
-            if (addr !== null) {
-                if (addr) {
-                    var full = addr.startsWith('http') ? addr : 'http://' + addr;
-                    try { localStorage.setItem('print_api_base', full); } catch(e) {}
-                }
-                location.reload();
-            }
         }
     </script>
 </body>
