@@ -12,7 +12,7 @@ import asyncio
 from pathlib import Path
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -96,10 +96,24 @@ async def kiosk():
 # ==================== API 路由 ====================
 
 @app.post("/api/upload")
-async def upload_file(file: UploadFile = File(...)):
-    """上传文件 -> 生成取件码 + 二维码"""
+async def upload_file(
+    file: UploadFile = File(...),
+    duplex: str = Form("simplex"),
+    paper_size: str = Form("A4"),
+):
+    """上传文件 -> 生成取件码 + 二维码
+
+    duplex: "simplex"(单面) | "longedge"(长边翻转) | "shortedge"(短边翻转)
+    paper_size: "A3" | "A4" | "A5"
+    """
     if not file.filename:
         raise HTTPException(status_code=400, detail="文件名为空")
+
+    # 验证打印选项
+    if duplex not in ("simplex", "longedge", "shortedge"):
+        duplex = "simplex"
+    if paper_size not in ("A3", "A4", "A5"):
+        paper_size = "A4"
 
     content = await file.read()
     if len(content) > 50 * 1024 * 1024:
@@ -127,6 +141,8 @@ async def upload_file(file: UploadFile = File(...)):
         "file_path": str(original_path),
         "pdf_path": str(pdf_path),
         "status": "pending",
+        "duplex": duplex,
+        "paper_size": paper_size,
         "created_at": time.time(),
         "expires_at": time.time() + JOB_EXPIRE_SECONDS,
     }
@@ -173,7 +189,10 @@ async def print_job(token: str):
 
     try:
         success, message = printer.print_pdf(
-            job["pdf_path"], job_name=job["filename"]
+            job["pdf_path"],
+            job_name=job["filename"],
+            duplex=job.get("duplex", "simplex"),
+            paper_size=job.get("paper_size", "A4"),
         )
 
         if success:

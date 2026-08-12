@@ -36,13 +36,23 @@
         .status-bar.uploading { display: block; background: #fef3c7; color: #92400e; }
         .status-bar.error { display: block; background: #fee2e2; color: #991b1b; }
         .tips { font-size: 13px; color: #6b7280; margin-top: 20px; line-height: 1.8; }
+        /* 打印选项样式 */
+        .print-options { background: #fff; border-radius: 16px; padding: 20px; margin: 16px 0; }
+        .option-group { margin-bottom: 20px; }
+        .option-group:last-child { margin-bottom: 0; }
+        .option-label { font-size: 15px; font-weight: 600; color: #1a1a2e; margin-bottom: 12px; display: block; }
+        .option-btns { display: flex; gap: 8px; }
+        .option-btn { flex: 1; padding: 12px 8px; border: 2px solid #e5e7eb; border-radius: 10px; background: #fff; font-size: 14px; color: #6b7280; cursor: pointer; text-align: center; transition: all 0.2s; }
+        .option-btn:active { border-color: #635bff; }
+        .option-btn.active { border-color: #635bff; background: #f5f3ff; color: #635bff; font-weight: 600; }
+        .option-desc { font-size: 11px; color: #9ca3af; margin-top: 4px; display: block; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1>自助打印</h1>
-            <p>上传文件 - 获取二维码 - 打印机旁扫码取件</p>
+            <p>上传文件 - 选择选项 - 获取二维码 - 扫码取件</p>
         </div>
 
         <div id="uploadSection">
@@ -59,6 +69,35 @@
 
             <div class="file-info" id="fileInfo">
                 <span id="fileName"></span>
+            </div>
+
+            <!-- 打印选项 -->
+            <div class="print-options">
+                <div class="option-group">
+                    <label class="option-label">双面打印</label>
+                    <div class="option-btns" id="duplexBtns">
+                        <div class="option-btn active" data-value="simplex">
+                            单面
+                            <span class="option-desc">仅正面</span>
+                        </div>
+                        <div class="option-btn" data-value="longedge">
+                            长边翻转
+                            <span class="option-desc">书本式</span>
+                        </div>
+                        <div class="option-btn" data-value="shortedge">
+                            短边翻转
+                            <span class="option-desc">日历式</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="option-group">
+                    <label class="option-label">纸张尺寸</label>
+                    <div class="option-btns" id="paperBtns">
+                        <div class="option-btn" data-value="A3">A3</div>
+                        <div class="option-btn active" data-value="A4">A4</div>
+                        <div class="option-btn" data-value="A5">A5</div>
+                    </div>
+                </div>
             </div>
 
             <button class="btn btn-primary" id="uploadBtn" disabled>上传并生成二维码</button>
@@ -80,6 +119,7 @@
             </div>
             <div class="token-display" id="tokenDisplay"></div>
             <div class="countdown" id="countdown"></div>
+            <div id="printOptionsDisplay" style="font-size:14px;color:#6b7280;margin-bottom:16px;"></div>
             <div class="tips-result">
                 <strong>取件步骤：</strong><br>
                 1. 前往打印机旁的扫码终端<br>
@@ -93,10 +133,13 @@
 
     <script>
         var selectedFile = null;
+        var selectedDuplex = 'simplex';
+        var selectedPaper = 'A4';
         var uploadArea = document.getElementById('uploadArea');
         var fileInput = document.getElementById('fileInput');
         var uploadBtn = document.getElementById('uploadBtn');
 
+        // 文件选择
         uploadArea.addEventListener('click', function() {
             fileInput.click();
         });
@@ -111,6 +154,35 @@
             }
         });
 
+        // 双面打印选项
+        var duplexBtns = document.getElementById('duplexBtns').children;
+        for (var i = 0; i < duplexBtns.length; i++) {
+            (function(btn) {
+                btn.addEventListener('click', function() {
+                    for (var j = 0; j < duplexBtns.length; j++) {
+                        duplexBtns[j].classList.remove('active');
+                    }
+                    btn.classList.add('active');
+                    selectedDuplex = btn.getAttribute('data-value');
+                });
+            })(duplexBtns[i]);
+        }
+
+        // 纸张尺寸选项
+        var paperBtns = document.getElementById('paperBtns').children;
+        for (var i = 0; i < paperBtns.length; i++) {
+            (function(btn) {
+                btn.addEventListener('click', function() {
+                    for (var j = 0; j < paperBtns.length; j++) {
+                        paperBtns[j].classList.remove('active');
+                    }
+                    btn.classList.add('active');
+                    selectedPaper = btn.getAttribute('data-value');
+                });
+            })(paperBtns[i]);
+        }
+
+        // 上传
         uploadBtn.addEventListener('click', function() {
             if (!selectedFile) {
                 alert('请先选择文件');
@@ -123,6 +195,8 @@
 
             var formData = new FormData();
             formData.append('file', selectedFile);
+            formData.append('duplex', selectedDuplex);
+            formData.append('paper_size', selectedPaper);
 
             var xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/upload', true);
@@ -134,8 +208,7 @@
                         showResult(data);
                     } catch(e) {
                         showStatus('解析响应失败: ' + e.message, 'error');
-                        uploadBtn.disabled = false;
-                        uploadBtn.textContent = '上传并生成二维码';
+                        resetBtn();
                     }
                 } else {
                     try {
@@ -144,19 +217,22 @@
                     } catch(e) {
                         showStatus('上传失败 (' + xhr.status + ')', 'error');
                     }
-                    uploadBtn.disabled = false;
-                    uploadBtn.textContent = '上传并生成二维码';
+                    resetBtn();
                 }
             };
 
             xhr.onerror = function() {
                 showStatus('网络错误，无法连接服务器', 'error');
-                uploadBtn.disabled = false;
-                uploadBtn.textContent = '上传并生成二维码';
+                resetBtn();
             };
 
             xhr.send(formData);
         });
+
+        function resetBtn() {
+            uploadBtn.disabled = false;
+            uploadBtn.textContent = '上传并生成二维码';
+        }
 
         function showResult(data) {
             document.getElementById('statusBar').style.display = 'none';
@@ -164,6 +240,10 @@
             document.getElementById('resultSection').classList.add('show');
             document.getElementById('qrImage').src = data.qr_code;
             document.getElementById('tokenDisplay').textContent = data.token;
+
+            // 显示打印选项
+            var duplexText = {simplex:'单面', longedge:'双面(长边翻转)', shortedge:'双面(短边翻转)'}[selectedDuplex];
+            document.getElementById('printOptionsDisplay').textContent = '打印设置: ' + duplexText + ' / ' + selectedPaper;
 
             var remaining = data.expires_in;
             var updateCountdown = function() {
