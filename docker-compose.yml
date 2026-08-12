@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+  qr-print:
+    build: .
+    container_name: qr-print-system
+    ports:
+      - "8000:8000"
+    environment:
+      - PRINTER_IP=10.1.13.252
+      - PRINTER_PORT=9100
+    volumes:
+      - print-storage:/app/storage
+    restart: unless-stopped
+    # 如需使用 host 网络模式（方便访问局域网打印机），取消注释以下行:
+    # network_mode: host
+
+volumes:
+  print-storage:

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>自助打印 - 上传文件</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, "Segoe UI", "Noto Sans CJK SC", "WenQuanYi Micro Hei", sans-serif;
+            background: #f0f2f5; color: #1a1a2e; min-height: 100vh;
+        }
+        .container { max-width: 480px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; padding: 30px 0 20px; }
+        .header h1 { font-size: 24px; color: #1a1a2e; }
+        .header p { font-size: 14px; color: #6b7280; margin-top: 8px; }
+
+        .upload-area {
+            background: #fff; border: 2px dashed #d1d5db; border-radius: 16px;
+            padding: 40px 20px; text-align: center; cursor: pointer;
+            transition: all 0.2s; margin: 20px 0;
+        }
+        .upload-area:hover, .upload-area.dragover {
+            border-color: #635bff; background: #f5f3ff;
+        }
+        .upload-icon {
+            width: 56px; height: 56px; margin: 0 auto 12px;
+            border-radius: 50%; background: #f5f3ff;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .upload-icon svg { width: 28px; height: 28px; color: #635bff; }
+        .upload-text { font-size: 16px; color: #1a1a2e; font-weight: 500; }
+        .upload-hint { font-size: 13px; color: #9ca3af; margin-top: 8px; }
+        #fileInput { display: none; }
+
+        .btn {
+            display: block; width: 100%; padding: 14px; border: none; border-radius: 12px;
+            font-size: 16px; font-weight: 500; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-primary { background: #635bff; color: #fff; }
+        .btn-primary:hover { background: #5a4ed6; }
+        .btn-primary:disabled { background: #c4b8fd; cursor: not-allowed; }
+        .btn-secondary { background: #f3f4f6; color: #374151; margin-top: 12px; }
+
+        .result { display: none; background: #fff; border-radius: 16px; padding: 30px 20px; text-align: center; }
+        .result.show { display: block; }
+        .result h2 { font-size: 18px; margin-bottom: 20px; color: #059669; }
+        .qr-wrapper {
+            display: inline-block; padding: 16px; background: #fff;
+            border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .qr-wrapper img { width: 220px; height: 220px; display: block; }
+        .token-display {
+            font-size: 32px; font-weight: 700; letter-spacing: 8px;
+            color: #635bff; margin: 20px 0 4px; font-family: monospace;
+        }
+        .token-label { font-size: 13px; color: #6b7280; }
+        .countdown { font-size: 14px; color: #6b7280; margin-top: 16px; }
+        .tips {
+            margin-top: 20px; padding: 16px; background: #f5f3ff; border-radius: 12px;
+            font-size: 13px; color: #4b5563; text-align: left; line-height: 1.8;
+        }
+        .tips strong { color: #635bff; }
+
+        .status-bar {
+            position: fixed; top: 0; left: 0; right: 0;
+            padding: 12px 20px; text-align: center; font-size: 14px;
+            z-index: 100; display: none;
+        }
+        .status-bar.uploading { background: #fef3c7; color: #92400e; display: block; }
+        .status-bar.error { background: #fee2e2; color: #991b1b; display: block; }
+
+        .file-info {
+            display: none; background: #f0fdf4; border: 1px solid #bbf7d0;
+            border-radius: 8px; padding: 12px; margin: 12px 0; font-size: 14px;
+            color: #15803d;
+        }
+        .file-info.show { display: block; }
+
+        .api-config {
+            margin-top: 16px; padding: 12px; background: #fff; border-radius: 8px;
+            font-size: 13px; color: #6b7280; text-align: center;
+        }
+        .api-config a { color: #635bff; text-decoration: underline; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="status-bar" id="statusBar"></div>
+
+    <div class="container">
+        <div class="header">
+            <h1>自助打印</h1>
+            <p>上传文件 &rarr; 获取二维码 &rarr; 打印机旁扫码取件</p>
+        </div>
+
+        <!-- Upload Section -->
+        <div id="uploadSection">
+            <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                    </svg>
+                </div>
+                <div class="upload-text">点击选择文件</div>
+                <div class="upload-hint">或拖拽文件到此处</div>
+            </div>
+            <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg,.gif,.bmp,.tiff,.webp,.doc,.docx,.ppt,.pptx,.xls,.xlsx">
+
+            <div class="file-info" id="fileInfo">
+                <span id="fileName"></span>
+            </div>
+
+            <button class="btn btn-primary" id="uploadBtn" disabled onclick="uploadFile()">
+                上传并生成二维码
+            </button>
+
+            <div class="tips">
+                <strong>支持的格式：</strong><br>
+                PDF、图片（PNG/JPG/GIF/BMP/TIFF/WEBP）<br>
+                Office 文档（Word / PPT / Excel）<br>
+                <strong>文件大小限制：50MB</strong>
+            </div>
+
+            <div class="api-config" id="apiConfig">
+                后端服务: <span id="apiDisplay">同源</span> | <a onclick="resetApi()">切换</a>
+            </div>
+        </div>
+
+        <!-- Result Section -->
+        <div class="result" id="resultSection">
+            <h2>上传成功，请到打印机旁扫码取件</h2>
+            <div class="qr-wrapper">
+                <img id="qrImage" alt="取件二维码">
+            </div>
+            <div class="token-label">取件码</div>
+            <div class="token-display" id="tokenDisplay"></div>
+            <div class="countdown" id="countdown"></div>
+            <div class="tips">
+                <strong>取件步骤：</strong><br>
+                1. 前往打印机旁的扫码终端<br>
+                2. 将二维码对准扫码枪，或手动输入取件码<br>
+                3. 等待打印完成<br><br>
+                <strong>取件码 30 分钟内有效，打印后自动销毁文件</strong>
+            </div>
+            <button class="btn btn-secondary" onclick="location.reload()">
+                上传新文件
+            </button>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        // 显示当前 API 地址
+        document.getElementById('apiDisplay').textContent = API_BASE || '同源 (' + location.host + ')';
+
+        let selectedFile = null;
+
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                selectedFile = e.target.files[0];
+                document.getElementById('fileName').textContent =
+                    selectedFile.name + ' (' + formatSize(selectedFile.size) + ')';
+                document.getElementById('fileInfo').classList.add('show');
+                document.getElementById('uploadBtn').disabled = false;
+            }
+        });
+
+        const uploadArea = document.getElementById('uploadArea');
+        uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+        uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+        uploadArea.addEventListener('drop', e => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                selectedFile = e.dataTransfer.files[0];
+                document.getElementById('fileInput').files = e.dataTransfer.files;
+                document.getElementById('fileName').textContent =
+                    selectedFile.name + ' (' + formatSize(selectedFile.size) + ')';
+                document.getElementById('fileInfo').classList.add('show');
+                document.getElementById('uploadBtn').disabled = false;
+            }
+        });
+
+        async function uploadFile() {
+            if (!selectedFile) return;
+            const btn = document.getElementById('uploadBtn');
+            btn.disabled = true;
+            btn.textContent = '上传中...';
+            showStatus('正在上传文件...', 'uploading');
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            try {
+                const res = await fetch(apiUrl('/api/upload'), { method: 'POST', body: formData });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || '上传失败');
+                showResult(data);
+            } catch (err) {
+                showStatus(err.message, 'error');
+                btn.disabled = false;
+                btn.textContent = '上传并生成二维码';
+            }
+        }
+
+        function showResult(data) {
+            document.getElementById('statusBar').style.display = 'none';
+            document.getElementById('uploadSection').style.display = 'none';
+            document.getElementById('resultSection').classList.add('show');
+            document.getElementById('qrImage').src = data.qr_code;
+            document.getElementById('tokenDisplay').textContent = data.token;
+
+            let remaining = data.expires_in;
+            const updateCountdown = () => {
+                if (remaining <= 0) {
+                    document.getElementById('countdown').textContent = '已过期，请重新上传';
+                    return;
+                }
+                const min = Math.floor(remaining / 60);
+                const sec = remaining % 60;
+                document.getElementById('countdown').textContent =
+                    '剩余有效时间: ' + min + '分' + sec + '秒';
+                remaining--;
+            };
+            updateCountdown();
+            setInterval(updateCountdown, 1000);
+        }
+
+        function showStatus(msg, type) {
+            const bar = document.getElementById('statusBar');
+            bar.textContent = msg;
+            bar.className = 'status-bar ' + type;
+        }
+
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / 1048576).toFixed(1) + ' MB';
+        }
+
+        function resetApi() {
+            localStorage.removeItem('print_api_base');
+            const addr = prompt('请输入后端服务器地址（留空则使用同源）:\n例如: 192.168.1.100:8000');
+            if (addr !== null) {
+                if (addr) {
+                    localStorage.setItem('print_api_base', addr.startsWith('http') ? addr : 'http://' + addr);
+                }
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>

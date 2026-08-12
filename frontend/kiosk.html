@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>扫码打印终端</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, "Segoe UI", "Noto Sans CJK SC", "WenQuanYi Micro Hei", sans-serif;
+            background: #1a1b2e; color: #e8eaf0;
+            min-height: 100vh; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+        }
+        .container { text-align: center; max-width: 600px; width: 100%; padding: 40px 20px; }
+
+        .header h1 { font-size: 32px; margin-bottom: 8px; }
+        .header p { font-size: 16px; color: #9ca3af; margin-bottom: 30px; }
+
+        .printer-status {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 8px 16px; border-radius: 999px; font-size: 14px;
+            margin-bottom: 40px;
+        }
+        .printer-status.online { background: rgba(34,197,94,0.15); color: #4ade80; }
+        .printer-status.offline { background: rgba(239,68,68,0.15); color: #f87171; }
+        .printer-status .dot { width: 8px; height: 8px; border-radius: 50%; }
+        .printer-status.online .dot { background: #4ade80; }
+        .printer-status.offline .dot { background: #f87171; }
+
+        .input-section { margin-bottom: 30px; }
+        .input-label { font-size: 16px; color: #9ca3af; margin-bottom: 12px; }
+        .token-input {
+            width: 100%; max-width: 400px; padding: 20px;
+            font-size: 36px; text-align: center; letter-spacing: 12px;
+            text-transform: uppercase; border: 2px solid #2d3142; border-radius: 12px;
+            background: #15162a; color: #fff; outline: none;
+            font-family: monospace; font-weight: 700;
+        }
+        .token-input:focus { border-color: #8b80ff; }
+        .token-input::placeholder { color: #4b5563; letter-spacing: 4px; font-size: 18px; font-weight: 400; }
+
+        .btn {
+            padding: 16px 48px; border: none; border-radius: 12px;
+            font-size: 18px; font-weight: 500; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-primary { background: #635bff; color: #fff; }
+        .btn-primary:hover { background: #5a4ed6; }
+        .btn-primary:disabled { background: #4a4373; cursor: not-allowed; }
+
+        .result { display: none; }
+        .result.show { display: block; }
+        .result-icon {
+            width: 80px; height: 80px; margin: 0 auto 16px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 36px; font-weight: 700;
+        }
+        .result-icon.success { background: rgba(34,197,94,0.15); color: #4ade80; }
+        .result-icon.error { background: rgba(239,68,68,0.15); color: #f87171; }
+        .result-icon.waiting { background: rgba(245,158,11,0.15); color: #fbbf24; }
+        .result-icon.info { background: rgba(99,91,255,0.15); color: #8b80ff; }
+        .result-title { font-size: 24px; margin-bottom: 8px; }
+        .result-message { font-size: 16px; color: #9ca3af; margin-bottom: 24px; }
+        .result-filename {
+            display: inline-block; padding: 8px 16px; background: #15162a;
+            border-radius: 8px; font-size: 14px; color: #9ca3af; margin-bottom: 24px;
+        }
+
+        .scan-hint {
+            margin-top: 40px; padding: 20px; background: #15162a; border-radius: 12px;
+            font-size: 14px; color: #6b7280; line-height: 1.8;
+        }
+        .scan-hint strong { color: #8b80ff; }
+
+        .auto-return { font-size: 13px; color: #6b7280; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>自助打印终端</h1>
+            <p>扫描二维码或输入取件码</p>
+        </div>
+
+        <div class="printer-status" id="printerStatus">
+            <span class="dot"></span>
+            <span id="printerStatusText">检查打印机状态...</span>
+        </div>
+
+        <!-- Input Section -->
+        <div id="inputSection" class="input-section">
+            <div class="input-label">请输入取件码</div>
+            <input type="text" class="token-input" id="tokenInput"
+                   placeholder="扫码或输入6位取件码"
+                   maxlength="6" autocomplete="off" autofocus
+                   oninput="this.value = this.value.toUpperCase()">
+            <br><br>
+            <button class="btn btn-primary" id="printBtn" onclick="submitPrint()">
+                打印
+            </button>
+        </div>
+
+        <!-- Result Section -->
+        <div class="result" id="resultSection">
+            <div class="result-icon" id="resultIcon"></div>
+            <div class="result-title" id="resultTitle"></div>
+            <div class="result-filename" id="resultFilename"></div>
+            <div class="result-message" id="resultMessage"></div>
+            <button class="btn btn-primary" onclick="resetTerminal()">
+                继续打印
+            </button>
+        </div>
+
+        <div class="scan-hint">
+            <strong>使用说明：</strong><br>
+            将手机上的二维码对准扫码枪，系统自动识别并打印<br>
+            也可手动输入 6 位取件码后点击「打印」按钮
+        </div>
+
+        <div class="auto-return" id="autoReturn"></div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        // Enter 键自动提交（USB 扫码枪会发送 Enter）
+        document.getElementById('tokenInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                submitPrint();
+            }
+        });
+
+        // 输入满 6 位自动提交
+        document.getElementById('tokenInput').addEventListener('input', function(e) {
+            if (e.target.value.length === 6) {
+                setTimeout(() => submitPrint(), 200);
+            }
+        });
+
+        async function submitPrint() {
+            const token = document.getElementById('tokenInput').value.trim().toUpperCase();
+            if (!token) return;
+
+            const btn = document.getElementById('printBtn');
+            btn.disabled = true;
+            btn.textContent = '打印中...';
+
+            try {
+                const res = await fetch(apiUrl('/api/print/' + token), { method: 'POST' });
+                const data = await res.json();
+
+                if (res.ok && data.status === 'success') {
+                    showResult('success', '打印成功', data.message, data.filename || '');
+                } else if (data.status === 'printing') {
+                    showResult('waiting', '正在打印', data.message, '');
+                } else if (data.status === 'printed') {
+                    showResult('info', '已打印', data.message, '');
+                } else {
+                    showResult('error', '打印失败', data.message || data.detail || '未知错误', '');
+                }
+            } catch (err) {
+                showResult('error', '网络错误', err.message, '');
+            }
+        }
+
+        function showResult(type, title, message, filename) {
+            document.getElementById('inputSection').style.display = 'none';
+            document.getElementById('resultSection').classList.add('show');
+            document.getElementById('resultIcon').className = 'result-icon ' + type;
+            document.getElementById('resultIcon').textContent =
+                type === 'success' ? '\u2713' : type === 'error' ? '\u2717' : type === 'waiting' ? '\u23F3' : 'i';
+            document.getElementById('resultTitle').textContent = title;
+            document.getElementById('resultMessage').textContent = message;
+            document.getElementById('resultFilename').textContent = filename ? '\u2630 ' + filename : '';
+            document.getElementById('resultFilename').style.display = filename ? 'inline-block' : 'none';
+
+            // 8 秒后自动返回
+            let count = 8;
+            const countdown = document.getElementById('autoReturn');
+            const timer = setInterval(() => {
+                count--;
+                countdown.textContent = count + ' 秒后自动返回...';
+                if (count <= 0) {
+                    clearInterval(timer);
+                    resetTerminal();
+                }
+            }, 1000);
+            countdown.textContent = count + ' 秒后自动返回...';
+        }
+
+        function resetTerminal() {
+            document.getElementById('inputSection').style.display = 'block';
+            document.getElementById('resultSection').classList.remove('show');
+            document.getElementById('tokenInput').value = '';
+            document.getElementById('tokenInput').focus();
+            const btn = document.getElementById('printBtn');
+            btn.disabled = false;
+            btn.textContent = '打印';
+            document.getElementById('autoReturn').textContent = '';
+        }
+
+        // 检查打印机状态
+        async function checkPrinter() {
+            const statusEl = document.getElementById('printerStatus');
+            const textEl = document.getElementById('printerStatusText');
+            try {
+                const res = await fetch(apiUrl('/api/health'));
+                const data = await res.json();
+                if (data.printer_reachable) {
+                    statusEl.className = 'printer-status online';
+                    textEl.textContent = '打印机在线 ' + data.printer_ip;
+                } else {
+                    statusEl.className = 'printer-status offline';
+                    textEl.textContent = '打印机离线 ' + data.printer_ip;
+                }
+            } catch (e) {
+                statusEl.className = 'printer-status offline';
+                textEl.textContent = '无法连接服务器';
+            }
+        }
+
+        checkPrinter();
+        setInterval(checkPrinter, 30000);
+    </script>
+</body>
+</html>
